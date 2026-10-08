@@ -1,0 +1,213 @@
+# iotComponents
+ESP32
+PZEM-004T energy meter module
+Wi-Fi connection
+Blynk IoT app
+AC load
+ESP32 + PZEM-004T + Blynk code
+:::writing{variant="document" id="74163" title="IoT Based Energy Meter Code"}
+
+#define BLYNK_TEMPLATE_ID "YOUR_TEMPLATE_ID"
+#define BLYNK_TEMPLATE_NAME "Energy Meter"
+#define BLYNK_AUTH_TOKEN "YOUR_AUTH_TOKEN"
+
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
+#include <PZEM004Tv30.h>
+
+char ssid[] = "YOUR_WIFI_NAME";
+char pass[] = "YOUR_WIFI_PASSWORD";
+
+// PZEM connected to ESP32 Serial2
+PZEM004Tv30 pzem(Serial2, 16, 17);
+
+BlynkTimer timer;
+
+void sendEnergyData()
+{
+  float voltage = pzem.voltage();
+  float current = pzem.current();
+  float power   = pzem.power();
+  float energy  = pzem.energy();
+  float pf      = pzem.pf();
+  float frequency = pzem.frequency();
+
+  // Send data to Blynk Virtual Pins
+  Blynk.virtualWrite(V0, voltage);
+  Blynk.virtualWrite(V1, current);
+  Blynk.virtualWrite(V2, power);
+  Blynk.virtualWrite(V3, energy);
+  Blynk.virtualWrite(V4, pf);
+  Blynk.virtualWrite(V5, frequency);
+
+  // Serial Monitor
+  Serial.println("----- ENERGY METER -----");
+
+  Serial.print("Voltage: ");
+  Serial.print(voltage);
+  Serial.println(" V");
+
+  Serial.print("Current: ");
+  Serial.print(current);
+  Serial.println(" A");
+
+  Serial.print("Power: ");
+  Serial.print(power);
+  Serial.println(" W");
+
+  Serial.print("Energy: ");
+  Serial.print(energy);
+  Serial.println(" kWh");
+
+  Serial.print("Power Factor: ");
+  Serial.println(pf);
+
+  Serial.print("Frequency: ");
+  Serial.print(frequency);
+  Serial.println(" Hz");
+
+  Serial.println("------------------------");
+}
+
+void setup()
+{
+  Serial.begin(115200);
+
+  // Start PZEM serial communication
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);
+
+  // Connect ESP32 to Wi-Fi and Blynk
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  // Send readings every 2 seconds
+  timer.setInterval(2000L, sendEnergyData);
+}
+
+void loop()
+{
+  Blynk.run();
+  timer.run();
+}
+:::
+
+Blynk virtual pins
+V0 → Voltage (V)
+V1 → Current (A)
+V2 → Power (W)
+V3 → Energy (kWh)
+V4 → Power Factor
+V5 → Frequency (Hz)
+⚠️ Safety: The PZEM connects to mains voltage. Do not work on the 230-V AC side while powered. Use proper isolation, fuses, enclosure, and qualified supervision.
+
+If you want, I can also give you the full IoT energy-meter project circuit diagram + Blynk setup + ESP32 connections.
+
+
+You said:
+
+give code
+
+ChatGPT said:
+Sure 👍 Here is a complete IoT-based Energy Meter code using ESP32 + PZEM-004T + Blynk.
+
+:::writing{variant="document" id="82614" title="IoT Energy Meter — ESP32 Code"}
+
+#define BLYNK_TEMPLATE_ID "YOUR_TEMPLATE_ID"
+#define BLYNK_TEMPLATE_NAME "IoT Energy Meter"
+#define BLYNK_AUTH_TOKEN "YOUR_BLYNK_TOKEN"
+
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
+#include <PZEM004Tv30.h>
+
+char ssid[] = "YOUR_WIFI_NAME";
+char pass[] = "YOUR_WIFI_PASSWORD";
+
+// PZEM RX = GPIO16, TX = GPIO17
+PZEM004Tv30 pzem(Serial2, 16, 17);
+
+BlynkTimer timer;
+
+void readEnergyMeter()
+{
+  float voltage   = pzem.voltage();
+  float current   = pzem.current();
+  float power     = pzem.power();
+  float energy    = pzem.energy();
+  float frequency = pzem.frequency();
+  float pf        = pzem.pf();
+
+  // Check for invalid readings
+  if (isnan(voltage)) {
+    Serial.println("Error reading PZEM!");
+    return;
+  }
+
+  // Send data to Blynk
+  Blynk.virtualWrite(V0, voltage);
+  Blynk.virtualWrite(V1, current);
+  Blynk.virtualWrite(V2, power);
+  Blynk.virtualWrite(V3, energy);
+  Blynk.virtualWrite(V4, frequency);
+  Blynk.virtualWrite(V5, pf);
+
+  // Display on Serial Monitor
+  Serial.println("========== ENERGY METER ==========");
+
+  Serial.print("Voltage    : ");
+  Serial.print(voltage);
+  Serial.println(" V");
+
+  Serial.print("Current    : ");
+  Serial.print(current);
+  Serial.println(" A");
+
+  Serial.print("Power      : ");
+  Serial.print(power);
+  Serial.println(" W");
+
+  Serial.print("Energy     : ");
+  Serial.print(energy);
+  Serial.println(" kWh");
+
+  Serial.print("Frequency  : ");
+  Serial.print(frequency);
+  Serial.println(" Hz");
+
+  Serial.print("Power Factor: ");
+  Serial.println(pf);
+
+  Serial.println("==================================");
+}
+
+void setup()
+{
+  Serial.begin(115200);
+
+  // Start communication with PZEM
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);
+
+  // Connect to Wi-Fi and Blynk
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  // Read meter every 2 seconds
+  timer.setInterval(2000L, readEnergyMeter);
+}
+
+void loop()
+{
+  Blynk.run();
+  timer.run();
+}
+:::
+
+Replace these four values before uploading:
+
+YOUR_TEMPLATE_ID
+YOUR_BLYNK_TOKEN
+YOUR_WIFI_NAME
+YOUR_WIFI_PASSWORD
+Blynk pins: V0 = Voltage, V1 = Current, V2 = Power, V3 = Energy, V4 = Frequency, V5 = Power Factor.
+
+⚠️ For a 230-V AC project, use the PZEM's proper wiring/isolation and have the mains side installed or checked by a qualified person.
+
+
